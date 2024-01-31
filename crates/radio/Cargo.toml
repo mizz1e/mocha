@@ -4,3 +4,8 @@ version = "0.0.0"
 edition = "2021"
 
 [dependencies]
+binrw = { version = "0.13.3", default-features = false, features = ["std"] }
+pal = { version = "0.0.0", path = "../pal", default-features = false }
+rustix = { version = "0.38.30", default-features = false, features = ["event", "std"] }
+tracing = { version = "0.1.40", default-features = false, features = ["std"] }
+tracing-subscriber = { version = "0.3.18", default-features = false, features = ["ansi", "env-filter", "time"] }

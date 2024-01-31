@@ -149,4 +149,8 @@ impl UmtsBoot {
 
         Ok(())
     }
+
+    pub fn as_device_mut(&mut self) -> &mut File {
+        &mut self.device
+    }
 }
