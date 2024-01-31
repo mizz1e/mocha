@@ -1,0 +1,9 @@
+[package]
+name = "pal"
+version = "0.0.0"
+edition = "2021"
+
+[dependencies]
+binrw = { version = "0.13.3", default-features = false, features = ["std"] }
+bitflags = { version = "2.4.2", default-features = false }
+rustix = { version = "0.38.30", default-features = false, features = ["event", "std"] }
