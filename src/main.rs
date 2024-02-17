@@ -102,7 +102,8 @@ fn main() -> ! {
     display.set_software_control();
 
     // Clear the framebuffer with red.
-    framebuffer.clear(Rgba::from_packed(0xFF0000FF));
+    // TODO: Some way to represent pixel formats, this is BGRA.
+    framebuffer.clear(Rgba::from_packed(0x0000FFFF));
 
     #[allow(clippy::empty_loop)]
     loop {}
