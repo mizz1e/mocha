@@ -80,9 +80,22 @@ fn main() -> ! {
     // Check `/proc/cmdline` for similar to `s3cfb.bootloaderfb=0xca00000`.
     // Resolution can be obtained from various online sources (GSMArena).
     let mut framebuffer = framebuffer! {
-        "beyondx" = 0xCA00_0000 @ 1440 x 3040,
+        // Samsung Galaxy A8 (2018)
         "jackpotlte" = 0xEC00_0000 @ 1080 x 2220,
+        // Samsung Galaxy Note 5
+        "noblelte" = 0x0E2A_0000 @ 1440 x 2560,
+        // Samsung Galaxy S6
+        "zeroflte" = 0x0E2A_0000 @ 1440 x 2560,
+        // Samsung Galaxy S8
+        "dreamlte" = 0x0CC0_0000 @ 1440 x 2960,
+        // Samsung Galaxy S9
+        "starlte" = 0x0CC0_0000 @ 1440 x 2960,
+        // Samsung Galaxy S10 5G
+        "beyondx" = 0xCA00_0000 @ 1440 x 3040,
+        // Samsung Galaxy S20
         "x1s" = 0xF100_0000 @ 1440 x 3200,
+        // Samsung Galaxy Note 20
+        "c1s" = 0xF100_0000 @ 1440 x 3200,
     };
 
     // Enable software control of the display.

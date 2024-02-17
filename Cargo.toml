@@ -4,7 +4,33 @@ version = "0.0.0"
 edition = "2021"
 
 [features]
-# SoCs
+# Devices, pick one of these:
+
+# Samsung Galaxy A8 (2018)
+jackpotlte = ["exynos7885"]
+
+# Samsung Galaxy Note 5
+noblelte = ["exynos7420"]
+
+# Samsung Galaxy S6
+zeroflte = ["exynos7420"]
+
+# Samsung Galaxy S8
+dreamlte = ["exynos8895"]
+
+# Samsung Galaxy S9
+starlte = ["exynos9810"]
+
+# Samsung Galaxy S10 5G
+beyondx = ["exynos9820"]
+
+# Samsung Galaxy S20
+x1s = ["exynos990"]
+
+# Samsung Galaxy Note 20
+c1s = ["exynos990"]
+
+# SoCs, you shouldn't specify these manually.
 exynos7420 = []
 exynos7570 = []
 exynos7885 = []
@@ -12,8 +38,3 @@ exynos8895 = []
 exynos9810 = []
 exynos9820 = []
 exynos990 = []
-
-# Device boards
-beyondx = ["exynos9820"]
-jackpotlte = ["exynos7885"]
-x1s = ["exynos990"]
