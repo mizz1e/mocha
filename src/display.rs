@@ -1,5 +1,6 @@
 use core::ffi;
 
+/// Define display parameters.
 macro_rules! display {
     (
         decon {

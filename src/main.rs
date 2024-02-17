@@ -1,4 +1,3 @@
-#![feature(cfg_match)]
 #![feature(naked_functions)]
 #![no_std]
 #![no_main]
@@ -18,8 +17,6 @@ pub mod framebuffer;
 #[no_mangle]
 unsafe extern "C" fn _start() -> ! {
     arch::asm!(
-        // https://www.kernel.org/doc/Documentation/arm64/booting.txt
-        //
         // code0
         "b {main}",
         // code1
@@ -27,6 +24,7 @@ unsafe extern "C" fn _start() -> ! {
         // text_offset
         ".8byte 0x80000",
         // image_size
+        // TODO: Automate determining the size?
         ".8byte 168",
         // flags
         ".8byte 0b1010",
@@ -57,7 +55,7 @@ fn main() -> ! {
     // 1936:   decon_f: decon_f@0x19030000 {
     // ```
     //
-    // As for `control`, I have no idea, these links have these values.
+    // As for `control`, I have no idea, these links mention the values values:
     //
     // - [uniLoader](https://github.com/ivoszbg/uniLoader)
     // - [PostmarketOS Wiki - Samsung Galaxy S7](https://wiki.postmarketos.org/wiki/Samsung_Galaxy_S7_(samsung-herolte))
