@@ -1,0 +1,17 @@
+[package]
+name = "sboot-handover"
+version = "0.0.0"
+edition = "2021"
+
+[features]
+exynos7420 = []
+exynos7570 = []
+exynos7885 = []
+exynos8895 = []
+exynos9810 = []
+exynos9820 = []
+exynos990 = []
+
+beyondx = ["exynos9820"]
+jackpotlte = ["exynos7885"]
+x1s = ["exynos990"]
