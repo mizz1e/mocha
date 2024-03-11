@@ -1,0 +1,8 @@
+[package]
+name = "radio-ctl"
+version = "0.0.0"
+edition = "2021"
+
+[dependencies]
+clap = { version = "4.4.18", default-features = false, features = ["color", "derive", "help", "std", "suggestions", "unicode", "usage"] }
+radio-common = { version = "0.0.0", path = "../radio-common", default-features = false }

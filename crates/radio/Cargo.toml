@@ -4,8 +4,9 @@ version = "0.0.0"
 edition = "2021"
 
 [dependencies]
-binrw = { version = "0.13.3", default-features = false, features = ["std"] }
-pal = { version = "0.0.0", path = "../pal", default-features = false }
-rustix = { version = "0.38.30", default-features = false, features = ["event", "std"] }
+radio-common = { version = "0.0.0", path = "../radio-common", default-features = false }
+rustix = { version = "0.38.31", default-features = false, features = ["std"] }
+tokio = { version = "1.36.0", default-features = false, features = ["fs", "io-util", "macros", "net", "rt"] }
+toml = { version = "0.8.10", default-features = false, features = ["parse"] }
 tracing = { version = "0.1.40", default-features = false, features = ["std"] }
 tracing-subscriber = { version = "0.3.18", default-features = false, features = ["ansi", "env-filter", "time"] }
