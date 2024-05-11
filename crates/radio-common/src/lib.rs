@@ -5,11 +5,8 @@ use {
     std::{
         fs::File,
         io::{self, Read, Seek, Write},
-        mem::{self, ManuallyDrop},
         path::{Path, PathBuf},
-        ptr,
     },
-    tokio::{io::unix::AsyncFd, task},
     tracing::trace,
 };
 
@@ -186,13 +183,13 @@ impl Boot5G {
     }
 
     pub async fn upload_firmware(&mut self, firmware: &Firmware) -> io::Result<()> {
-        let (mut toc_reader, tocs) = firmware.toc().ok_or_else(no_firmware)?;
-        let mut nv = firmware.nv().ok_or_else(no_firmware)?;
-        let base_address = tocs[0].address;
+        let (_toc_reader, tocs) = firmware.toc().ok_or_else(no_firmware)?;
+        let _nv = firmware.nv().ok_or_else(no_firmware)?;
+        let _base_address = tocs[0].address;
 
         trace!("Start boot.");
 
-        let Self { spi, device } = self;
+        let Self { spi: _, device } = self;
 
         device.power_on()?;
         device.boot_start()?;
