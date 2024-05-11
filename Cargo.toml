@@ -1,0 +1,12 @@
+[package]
+name = "mocha-console"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bytemuck = { version = "1.15.0", default-features = false }
+fontdue = { version = "0.8.0", default-features = false, features = ["simd"] }
+glam = { version = "0.25.0", default-features = false, features = ["libm"] }
+jpeg-encoder = { version = "0.6.0", default-features = false, features = ["simd"] }
+palette = { version = "0.7.4", default-features = false, features = ["alloc", "bytemuck", "libm"] }
+zune-png = { version = "0.4.10", default-features = false }
