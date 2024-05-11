@@ -7,5 +7,8 @@ edition = "2021"
 binrw = { version = "0.13.3", default-features = false, features = ["std"] }
 pal = { version = "0.0.0", path = "../pal", default-features = false }
 rustix = { version = "0.38.30", default-features = false, features = ["event", "std"] }
+serde = { version = "1.0.196", default-features = false, features = ["derive", "std"] }
+tokio = { version = "1.36.0", default-features = false, features = ["fs", "io-util", "macros", "net", "rt"] }
+toml = { version = "0.8.9", default-features = false, features = ["parse"] }
 tracing = { version = "0.1.40", default-features = false, features = ["std"] }
 tracing-subscriber = { version = "0.3.18", default-features = false, features = ["ansi", "env-filter", "time"] }

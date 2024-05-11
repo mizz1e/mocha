@@ -1,89 +1,145 @@
 use {
     binrw::BinRead,
     pal::modem::{self, UmtsBoot},
-    rustix::event::{self, PollFd, PollFlags},
-    std::{
-        fs::{self, File},
-        io::{self, Read},
-        thread,
-        time::Duration,
-    },
+    std::{fs, io, thread},
     tracing::{error, info},
 };
 
-fn main() -> io::Result<()> {
-    tracing_subscriber::fmt::init();
+/// Network names
+///
+/// 2G GSM (Global System for Mobile Communications)
+/// 3G UMTS (Universal Mobile Telecommunications System)
+/// 4G LTE (Long-Term Evolution)
+/// 5G NR (New Radio)
+///
+mod ril {
+    use {
+        std::{
+            fs::File,
+            io::{self, Read},
+            path::Path,
+        },
+        tokio::io::{
+            unix::{AsyncFd, AsyncFdReadyMutGuard},
+            Interest,
+        },
+        tracing::info,
+    };
 
-    info!("open /dev/umts_ipc0");
+    const BOOT_MAX_LEN: usize = 512;
 
-    let mut umts_ipc = File::options()
-        .read(true)
-        .write(true)
-        .open("/dev/umts_ipc0")?;
+    const IPC_HEADER_LEN: usize = 7;
+    const IPC_BODY_LEN: usize = u8::MAX as usize;
+    const IPC_MAX_LEN: usize = IPC_HEADER_LEN + IPC_BODY_LEN;
 
-    info!("open /dev/umts_rfs0");
+    enum Which<'a> {
+        Boot(AsyncFdReadyMutGuard<'a, File>),
+        Ipc(AsyncFdReadyMutGuard<'a, File>),
+        Ipc5g(AsyncFdReadyMutGuard<'a, File>),
+        Rfs(AsyncFdReadyMutGuard<'a, File>),
+    }
 
-    let umts_rfs = File::options()
-        .read(true)
-        .write(true)
-        .open("/dev/umts_rfs0")?;
+    pub struct Ril {
+        boot: AsyncFd<File>,
+        ipc: AsyncFd<File>,
+        ipc_5g: AsyncFd<File>,
+        rfs: AsyncFd<File>,
+    }
 
-    // FIXME: Is there a better way to implement this? (async?).
-    thread::spawn(move || match boot_modem() {
-        Ok(()) => unreachable!(),
-        Err(error) => error!("umts boot: {error}"),
-    });
+    impl Ril {
+        pub fn open() -> io::Result<Self> {
+            Ok(Self {
+                boot: open_device("/dev/umts_boot0")?,
+                ipc: open_device("/dev/umts_ipc0")?,
+                ipc_5g: open_device("/dev/umts_ipc1")?,
+                rfs: open_device("/dev/umts_rfs0")?,
+            })
+        }
 
-    loop {
-        let mut fds = [
-            PollFd::new(&umts_ipc, PollFlags::IN),
-            PollFd::new(&umts_rfs, PollFlags::IN),
-        ];
+        pub async fn next_event(&mut self) -> io::Result<()> {
+            while let Ok(which) = tokio::select! {
+                result = self.boot.ready_mut(Interest::READABLE) => result.map(Which::Boot),
+                result = self.ipc.ready_mut(Interest::READABLE) => result.map(Which::Ipc),
+                result = self.ipc_5g.ready_mut(Interest::READABLE) => result.map(Which::Ipc5g),
+                result = self.rfs.ready_mut(Interest::READABLE) => result.map(Which::Rfs),
+            } {
+                match which {
+                    Which::Boot(mut guard) => {
+                        let mut buf = [0; BOOT_MAX_LEN];
+                        let amount = guard.get_inner_mut().read(&mut buf)?;
+                        let buf = &buf[..amount];
 
-        let index = event::poll(&mut fds, -1)?;
-
-        match index {
-            0 => {
-                info!("umts ipc: ready");
-
-                let state = modem::ioctl::ioctl_modem_status(&umts_ipc)?;
-
-                info!("umts ipc: {state:?}");
-
-                let mut bytes = [0u8; 7 + u16::MAX as usize];
-
-                match umts_ipc.read(&mut bytes) {
-                    Ok(len) => {
-                        if len >= 7 {
-                            let header =
-                                modem::c::SipcFmtHdr::read(&mut io::Cursor::new(&bytes[..len]))
-                                    .map_err(io::Error::other)?;
-
-                            let body = &bytes[7..(header.len as usize)];
-
-                            info!("umts ipc: {header:?}");
-                            info!("umts ipc: {body:02X?}");
-                        } else {
-                            info!("umts ipc: unknown packet");
-                            info!("umts ipc: {:02X?}", &bytes[..len]);
-                        }
+                        info!("UMTS boot message: {buf:02X?}");
                     }
-                    Err(error) => {
-                        error!("umts ipc: {error}");
+                    Which::Ipc(mut guard) => {
+                        let mut buf = [0; IPC_MAX_LEN];
+                        let amount = guard.get_inner_mut().read(&mut buf)?;
+                        let buf = &buf[..amount];
+
+                        info!("UMTS IPC message: {buf:02X?}");
+                    }
+                    Which::Ipc5g(mut guard) => {
+                        let mut buf = [0; IPC_MAX_LEN];
+                        let amount = guard.get_inner_mut().read(&mut buf)?;
+                        let _ipc_5g_buf = &buf[..amount];
+
+                        info!("UMTS IPC 5G message: {buf:02X?}");
+                    }
+                    Which::Rfs(mut guard) => {
+                        let mut buf = [0; IPC_MAX_LEN];
+                        let amount = guard.get_inner_mut().read(&mut buf)?;
+                        let _rfs_buf = &buf[..amount];
+
+                        info!("UMTS RFS message: {buf:02X?}");
                     }
                 }
             }
-            1 => {
-                info!("umts rfs: ready");
 
-                info!("umts rfs: not implemented");
-            }
-            _ => {
-                unreachable!()
-            }
+            Ok(())
         }
     }
+
+    fn open_device<P: AsRef<Path>>(path: P) -> io::Result<AsyncFd<File>> {
+        let path = path.as_ref();
+
+        info!("Open device {}", path.display());
+
+        File::options()
+            .read(true)
+            .write(true)
+            .open(path)
+            .and_then(AsyncFd::new)
+    }
 }
+
+#[tokio::main(flavor = "current_thread")]
+async fn main() -> io::Result<()> {
+    tracing_subscriber::fmt::init();
+
+    // FIXME: Is there a better way to implement this? (async?).
+    boot_modem()?;
+
+    let mut ril = ril::Ril::open()?;
+
+    while ril.next_event().await.is_ok() {}
+
+    Ok(())
+}
+
+/*use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Firmware {
+    pub radio: PathBuf,
+    pub radio_5g: PathBuf,
+    pub nv_partition: PathBuf,
+    pub nv_5g_partition: PathBuf,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Settings {
+    pub firmware: Firmware,
+}*/
 
 fn boot_modem() -> io::Result<()> {
     info!("open /dev/block/by-name/radio");
@@ -173,18 +229,5 @@ fn boot_modem() -> io::Result<()> {
 
     info!("umts boot: success");
 
-    loop {
-        let mut bytes = [0u8; 512];
-        let len = umts_boot.as_device_mut().read(&mut bytes)?;
-
-        if len > 0 {
-            let bytes = &bytes[0..len];
-            let state = modem::ioctl::ioctl_modem_status(umts_boot.as_device_mut())?;
-
-            info!("umts boot: {state:?}");
-            info!("umts boot: {bytes:02X?}");
-        } else {
-            thread::sleep(Duration::from_secs(1));
-        }
-    }
+    Ok(())
 }
