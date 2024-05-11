@@ -232,7 +232,9 @@ async fn add(package: &Package) -> anyhow::Result<()> {
 
                 println!("{prefix}: target {target}");
 
-                let cargo = Cargo::new("/you/config/rust/bin/cargo")?;
+                let cargo = Cargo::new("/you/dat/rust/bin/cargo")
+                    .map_err(|error| io::Error::other(format!("cargo: {error}")))?;
+
                 let mut child = cargo
                     .build(&source_dir)
                     .features(
@@ -250,9 +252,6 @@ async fn add(package: &Package) -> anyhow::Result<()> {
                 let mut time = tokio::time::interval(std::time::Duration::from_millis(50));
 
                 loop {
-                    //println!("{child:?}");
-                    println!("{time:?}");
-
                     tokio::select! {
                         biased;
 
