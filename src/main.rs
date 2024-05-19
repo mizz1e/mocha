@@ -1,5 +1,6 @@
 use {
     self::fs::{FsKind, MountOptions},
+    clap::Parser,
     std::io::{self, BufRead, Write},
 };
 
@@ -70,6 +71,16 @@ fn mount() -> io::Result<()> {
     Ok(())
 }
 
+#[derive(Parser)]
+#[command(multicall = true)]
+pub enum Args {
+    /// Print the specified text.
+    Echo { text: Vec<String> },
+
+    /// Print system information.
+    Info,
+}
+
 fn shell() -> io::Result<()> {
     let mut stdin = io::stdin().lock();
     let mut stdout = io::stdout().lock();
@@ -78,9 +89,48 @@ fn shell() -> io::Result<()> {
     loop {
         write!(&mut stdout, " [mocha] ")?;
         stdout.flush()?;
-
+        line.clear();
         stdin.read_line(&mut line)?;
 
-        line.clear();
+        let iter = line.split_whitespace().filter(|split| !split.is_empty());
+
+        let args = match Args::try_parse_from(iter) {
+            Ok(args) => args,
+            Err(error) => {
+                writeln!(&mut stdout, "{error}")?;
+                continue;
+            }
+        };
+
+        match args {
+            Args::Echo { text } => {
+                let text = text.join(" ");
+
+                writeln!(&mut stdout, "{text}")?;
+            }
+            Args::Info => {
+                let system = sysinfo::System::new_all();
+                let cpu = system.global_cpu_info();
+
+                writeln!(&mut stdout, "Mocha OS")?;
+                writeln!(
+                    &mut stdout,
+                    "Kernel: {}",
+                    sysinfo::System::kernel_version().unwrap()
+                )?;
+                writeln!(
+                    &mut stdout,
+                    "CPU: {} [{} Mhz]",
+                    cpu.brand(),
+                    cpu.frequency()
+                )?;
+                writeln!(
+                    &mut stdout,
+                    "Memory: {} / {}",
+                    system.used_memory(),
+                    system.total_memory()
+                )?;
+            }
+        }
     }
 }

@@ -4,4 +4,6 @@ version = "0.0.0"
 edition = "2021"
 
 [dependencies]
+clap = { version = "4.5.4", default-features = false, features = ["color", "derive", "env", "error-context", "help", "std", "suggestions", "unicode", "usage"] }
 rustix = { version = "0.38.34", default-features = false, features = ["libc", "mount", "process", "std", "system", "thread"] }
+sysinfo = { version = "0.30.12", default-features = false }
